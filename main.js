@@ -360,8 +360,8 @@ var Track = function(id, playerElm, mode)
 
 // Main variables
 var tracks = Array();
-var apikey = "fa4fd9860f4323abe636e5d8f22c85c1";
-var secret = "c8d4daf706b407a22e1d0a22534bcd02";
+var apikey = "xxx";
+var secret = "xxx";
 var user = {};
 var lastfm = new LastFM();
 
