@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "minimum_chrome_version": "18",
+  "name": "Soundcloud Scrobbler",
+  "version": "1.0.2",
+  "description": "Last.fm scrobbling tracks of Soundcloud.com",
+  "icons": {"128": "icon128.png"},
+  "content_scripts": [
+    {
+      "matches": ["http://*.soundcloud.com/*"],
+      "css": ["main.css"],
+      "js": [
+      	"jquery.js",
+      	"encode.js",
+      	"main.js"
+      ]
+    }
+  ],
+  "options_page": "options.html",
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": [
+    "http://*.soundcloud.com/*",
+    "background"
+  ],
+  "web_accessible_resources": [
+  	"LastFMfavicon.png",
+  	"sprite.png",
+  	"jquery.js",
+  	"options.js",
+  	"encode.js",
+  	"options.css",
+  	"options.html"
+  ] 
+}
