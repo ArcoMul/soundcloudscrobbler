@@ -13,6 +13,7 @@
       	"jquery.js",
       	"encode.js",
         "underscore-min.js",
+        "underscore.string.min.js",
         "backbone-min.js",
         "backbone.localStorage-min.js",
       	"main.js"
