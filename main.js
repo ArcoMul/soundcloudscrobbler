@@ -6,7 +6,16 @@
  *  Dunno, just don't steal my shit and prentend it is your shit. When you
  *  make it better and give credits to me, you are free to use it.
  *
+ * Todo's, before releasing
+ *  - If not track, show a nice notification instead of 'Undefined - Undefined'
+ *  - Test
+ *
+ *  Todo's, further away
+ *  - Track with multiple tracks (doesn't use 'by')
+ *
  * Changelog
+ *  2.0.1 - 27 mei 2013
+ *   - First working version for SoundcloudNext
  *  1.0.2 - 2 august 2012
  *   - Bug: And again Chrome seemed to have a problem with me (Manifest version 2)
  *  1.0.1 - 2 august 2012
@@ -61,6 +70,7 @@ var LastFM = function()
 			sk			: user.key,
 			track 		: track.title
 		}
+        console.log(data);
 		apiSig = this.createApiSig(data);
         
         this.ajax(data, apiSig, function(xml){
@@ -121,10 +131,9 @@ var LastFM = function()
 /**
  * Track object
  */
-var Track = function(id, playerElm, mode)
+var Track = function(key)
 {
-	this.id = id;
-	this.playerElm = playerElm;
+	this.key = key;
 	this.title;
 	this.artist;
 	this.unknown = false;
@@ -133,7 +142,7 @@ var Track = function(id, playerElm, mode)
 	this.isScrobbled = false;
 	this.startTime;
 	this.duration;
-	this.mode = mode;
+	// this.mode = mode || null;
 	this.artists = [];
 	this.titles = [];
 	
@@ -142,65 +151,14 @@ var Track = function(id, playerElm, mode)
 	 */
 	this.init = function()
 	{
-		this.playerElm.data('SLSid', this.id);
-		this.buildLabel();
-		this.duration = this.getDuration();
+        console.log('New track found:', this.key);
+		// this.duration = this.getDuration();
 	}
 	
-	/**
-	 * Returns the element of the page which holds the Soundcloud username
-	 */
-	this.getPlayerUser = function()
-	{
-		if(this.mode == playermode.MEDIUM)
-			return this.playerElm.children('.info-header').children('.subtitle').children('.user').children('a').text();
-		else if (this.mode == playermode.LARGE)
-			return this.playerElm.children('.info-header').children('h2').children('.user').children('a').text();
-	}
-	
-	/**
-	 * Return the element of the page which holds the title of the Soundcloud track
-	 */
-	this.getPlayerTitle = function()
-	{
-		if(this.mode == playermode.MEDIUM)
-			return this.playerElm.children('.info-header').children('h3').children('span').children('a').text();
-		else if (this.mode == playermode.LARGE)
-			return this.playerElm.children('.info-header').children('h1').children('span').children('em').text();
-	}
-	
-	/**
-	 * Return the labal which has been made by creating this object
-	 */
-	this.getLabel = function()
-	{
-		if(this.mode == playermode.MEDIUM)
-			return this.playerElm.children('.info-header').children('h3').children('span').children('.SLSholder').children();
-		else if (this.mode == playermode.LARGE)
-			return this.playerElm.children('.info-header').children('h1').children('span').children('.SLSholder').children();
-	}
-	
-	this.removeLabelSpan = function()
-	{
-		this.getLabel().parent().parent().children("a, em").unwrap();
-	}
-	
-	/**
-	 * Makes the label, called in the init function
-	 */
-	this.buildLabel = function()
-	{
-		if(this.mode == playermode.MEDIUM)
-			var aElm = this.playerElm.children('.info-header').children('h3').children('a');
-		else if (this.mode == playermode.LARGE)
-			var aElm = this.playerElm.children('.info-header').children('h1').children('em');
-			
-		aElm.wrap('<span>');
-    	aElm.parent().append("<div class='SLSholder'><div class='tag'><img src='"+ chrome.extension.getURL("LastFMfavicon.png") +"' /><p> ... </p></div></div>");
-	}
 	
 	this.getDuration = function ()
 	{
+        // TODO
 		var time = this.playerElm.find(".timecodes .duration").html();
 		time = time.split(".");
 		return (Number(time[0]) * 60 + Number(time[1]));
@@ -212,8 +170,6 @@ var Track = function(id, playerElm, mode)
 	this.setUnknown = function ()
 	{
 		this.unknown = true;
-		this.displayText();
-		this.getLabel().addClass('unknown');
 	}
 	
 	/**
@@ -222,8 +178,6 @@ var Track = function(id, playerElm, mode)
 	this.setKnown = function ()
 	{
 		this.unknown = false;
-		this.displayText();
-		this.getLabel().removeClass('unknown');
 	}
 	
 	/**
@@ -238,39 +192,9 @@ var Track = function(id, playerElm, mode)
 		return true;
 	}
 	
-	/**
-	 * Displays the text in the label
-	 */
-	this.displayText = function()
-	{
-		if(!this.unknown)
-		{
-			if(this.artist.toLowerCase() == this.title.toLowerCase()) {
-				this.setUnknown();
-				this.displayText();
-				return false;
-			}
-			
-			displayText = '<a target="_blank" href="http://www.last.fm/music/' + this.artist + '">' + this.artist + '</a> - <a href="http://www.last.fm/music/' + this.artist + '/_/' + this.title + '">';
-			
-			if(this.title.length > 30)
-				displayText = displayText + this.title.substr(0, 30) + '...';
-			else
-				displayText = displayText + this.title;
-			
-			displayText =  displayText + '</a>';
-		}
-		else
-		{
-			displayText =  '<span>Unknown</span> <a class="add" href="#">add</a>';
-		}
-		
-		this.getLabel().children('p').html(displayText);
-	}
-	
 	this.getSecondsPlayed = function ()
 	{
-		return Number(this.playerElm.find(".timecodes .editable").html());
+		return Number($('.playing .timeIndicator.playing .timeIndicator__current:visible').html());
 	}
 	
 	this.updateSecondsPlayed = function ()
@@ -290,7 +214,6 @@ var Track = function(id, playerElm, mode)
 				this.startTime = Math.round((new Date()).getTime() / 1000);
 			this.playing = true;
 			lastfm.setPlaying(this);
-			this.getLabel().children('p').html('▶ ' + this.getLabel().children('p').html());
 		}
 		else if (this.playing)
 		{
@@ -307,7 +230,6 @@ var Track = function(id, playerElm, mode)
 		{
 			this.playing = false;
 			lastfm.scrobble(this);
-			this.getLabel().children('p').html(this.getLabel().children('p').html().replace('▶ ', ''));
 		}
 	}
 	
@@ -320,7 +242,6 @@ var Track = function(id, playerElm, mode)
 		var label = this.getLabel();
 		if(label.next('.arrow').length == 0)
 		{
-			console.log("DO IT!");
 			label.after('<div class="arrow" style="background-image:url('+chrome.extension.getURL("sprite.png")+')"></div><div class="cloud"><table cellspacing="0" cellpadding="0"><tr><th>Artist</th><th>Title</th><th><div class="close-cloud" style="background-image:url('+chrome.extension.getURL("sprite.png")+')"></div></th></tr></table></div>');
 			var cloud = label.next().next().children('table');
 			var posb = [];
@@ -354,16 +275,35 @@ var Track = function(id, playerElm, mode)
 	this.init();
 }
 
+var SrobbleLabel = function () {
+    this.$el;
+    this.init = function () {
+        $('body').append('<div id="soundcloudscrobbler-scrobble-label"><strong>Now Srobbling:</strong><br /><span class="now"><em>Nothing yet</em></span></div>');
+        this.$el = $('#soundcloudscrobbler-scrobble-label');
+    }
+    this.showTrack = function (track) {
+       this.$el.children('span.now').html(track.artist + ' - ' + track.title); 
+    }
+    this.showUnknown = function (track) {
+       this.$el.children('span.now').html('<em>Unkown track</em>'); 
+    }
+    this.init();
+}
+
 /* ------------------------*/
 /* --- CODE STARTS HERE	---*/
 /* ------------------------*/
 
+console.log('Load Soundcloud Scrobbler');
+
 // Main variables
-var tracks = Array();
-var apikey = "xxx";
-var secret = "xxx";
+var tracks = {};
+var apikey = "fa4fd9860f4323abe636e5d8f22c85c1";
+var secret = "c8d4daf706b407a22e1d0a22534bcd02";
 var user = {};
 var lastfm = new LastFM();
+var label = new SrobbleLabel();
+var nowPlaying;
 
 var playermode = {
 	LARGE: 1,
@@ -372,27 +312,31 @@ var playermode = {
 
 // Start function
 loadUser(init);
-setInterval(playing, 1000);
+// setInterval(playing, 1000);
 
 function init () {
-	if($("body").attr("id") == "dashboard" && $("div.medium.player").length == 0)
-	{
-		setTimeout(init, 500);
-		return false;
-	}
-		
-	$("div.medium.player").each(function(){
-		console.log('medium');
-		var track = new Track(tracks.length, $(this), playermode.MEDIUM);
-		initTrack(track);
-	});
-	
-	$("div.large.player").each(function(){
-		console.log('large');
-		var track = new Track(tracks.length, $(this), playermode.LARGE);
-		initTrack(track);
-	});
-    
+    console.log('Start Soundcloud Scrobbler');
+
+    setInterval(function(){
+        // 'play' to update the seconds counter
+        if(nowPlaying) {
+            nowPlaying.play();
+        }
+        
+        // 'watch' for new track
+        var title = document.getElementsByTagName('title')[0].innerHTML;
+        if(!title) return;
+        if(tracks[title]) {
+            if(tracks[title] !== nowPlaying) {
+                switchTo(tracks[title]);
+            } else {
+                return;
+            }
+        } else { 
+            tracks[title] = new Track(title);   
+            initTrack(tracks[title]);
+        }
+    }, 2000);
 }
 
 /**
@@ -402,9 +346,18 @@ function initTrack(track)
 {
 	var titles = Array();
 	var artists = Array()
+
+    var title = track.key.substr(2).split('by')[0];
+    var username = track.key.substr(2).split('by')[1];
+    console.log('Title', title, 'Username', username);
+
+    if(!username) {
+        console.log('Not a track');
+        return;
+    }
 	
 	// Getting the first or last part of the track title (only when there is a '-')
-	var splitArray = track.getPlayerTitle().split('-');
+	var splitArray = title.split('-');
 	if(splitArray.length > 1)
 	{
 		artists.push($.trim(splitArray[0]));
@@ -415,23 +368,23 @@ function initTrack(track)
 	}
 	
 	// Putting the full Soundcloud track title in the tracks array
-	titles.push(track.getPlayerTitle());
+	titles.push(title);
 	
 	// Putting the Soundcloud user in the artists array
-	artists.push(track.getPlayerUser());
-	
-	// Adds the Track to the Tracks array
-	tracks.push(track);
+	artists.push(username);
 	
 	// Adding the artist and title to the track
-	addArtistAndTrackToTrack(tracks[track.id], artists, titles);
+	addArtistAndTrackToTrack(tracks[track.key], artists, titles, function(track, title, artist) {
+        console.log('Track initialized'); 
+        switchTo(track);
+    });
 };
 
 /**
  * By giving arrays with artists and tracks add a title and artist to the Track,
  * if found on Last.fm
  */
-function addArtistAndTrackToTrack(track, artists, titles)
+function addArtistAndTrackToTrack(track, artists, titles, callback)
 {
 	// Making copies of the arrays by using slice, and save them in the track for later use
 	track.titles = track.titles.length == 0 ? titles.slice(0) : track.titles;
@@ -451,7 +404,7 @@ function addArtistAndTrackToTrack(track, artists, titles)
 				// Clear the Array so the next loop the track title will be getted
 				artists = Array();
 				// Recall the function to get the track title
-				addArtistAndTrackToTrack(track, artists, titles);
+				addArtistAndTrackToTrack(track, artists, titles, callback);
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				// Artist does not excists, 400 bad request error
@@ -461,12 +414,13 @@ function addArtistAndTrackToTrack(track, artists, titles)
 				// When there are still artists to try, try again
 				if(artists.length > 0)
 				{
-					addArtistAndTrackToTrack(track, artists, titles);
+					addArtistAndTrackToTrack(track, artists, titles, callback);
 				}
 				// Else the artist is unknown and the process can be stopped
 				else
 				{
 					track.setUnknown();
+                    callback(track);
 				}
 			}
 		});
@@ -484,76 +438,44 @@ function addArtistAndTrackToTrack(track, artists, titles)
 				if(!track.checkArtistAndTitle(track.artist, track.title)) {
 					titles.splice(0, 1);
 					if(titles.length > 0)
-						addArtistAndTrackToTrack(track, artists, titles);
-					else
+						addArtistAndTrackToTrack(track, artists, titles, callback);
+					else {
 						track.setUnknown();
+                        callback(track);
+                    }
 				} else {
-					track.displayText();
+                    callback(track, track.title, track.artist);
 				}
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				// If not found try again when there are options left
 				titles.splice(0, 1)
 				if(titles.length > 0)
-					addArtistAndTrackToTrack(track, artists, titles);
+					addArtistAndTrackToTrack(track, artists, titles, callback);
 				// Else mark the Track as unknown;
-				else
+				else {
 					track.setUnknown();
+                    callback(track);
+                }
 			}
 		});
 	}
 }
 
-/**
- * Checks whether there is a Track playing, or not
- */
-function playing ()
-{
-	if($(".playing").length > 0)
-	{
-		track = getTrackFromPlaying($(".playing"));
-		track.play();
-		checkForTrackStop(track.id);
-	}
-	else
-	{
-		stopAllTracks();
-	}
-	
-}
-
-/**
- * Returns by giving the .playing class the Track which is playing
- */
-function getTrackFromPlaying(playingElm)
-{
-	return tracks[playingElm.parent().data('SLSid')];
-}
-
-/**
- * Check whether there are playing multiple tracks, if so stop the 
- * not current playing track from playing
- */
-function checkForTrackStop(currentPlaying)
-{
-	playingCount = 0;
-	for(var i = 0; i < tracks.length; i++)
-	{
-		if(i != currentPlaying && tracks[i].playing == true)
-			tracks[i].stop();	
-	}
-}
-
-/**
- * Stops all the tracks from playing
- */
-function stopAllTracks()
-{
-	for(var i = 0; i < tracks.length; i++)
-	{
-		if(tracks[i].playing == true)
-			tracks[i].stop();
-	}
+var switchTo = function (track) {
+    if(track.unknown) {
+        console.log('Unkown track'); 
+        label.showUnknown();
+        nowPlaying = null;
+    }
+    else {
+        if(nowPlaying) {
+            nowPlaying.stop();
+        }
+        nowPlaying = track;
+        nowPlaying.play();
+        label.showTrack(nowPlaying);
+    }
 }
 
 /**
@@ -568,18 +490,6 @@ function loadUser(callback)
         callback();
     });
 }
-
-function restart()
-{
-	for(var i = 0; i < tracks.length; i++)
-	{
-		tracks[i].removeLabelSpan();
-	}
-	$(".SLSholder").remove();
-	tracks = Array();
-	setTimeout(init, 1000);
-}
-
 
 // Events:
 

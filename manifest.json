@@ -7,7 +7,7 @@
   "icons": {"128": "icon128.png"},
   "content_scripts": [
     {
-      "matches": ["http://*.soundcloud.com/*"],
+      "matches": ["http://*.soundcloud.com/*", "https://*.soundcloud.com/*"],
       "css": ["main.css"],
       "js": [
       	"jquery.js",
@@ -22,6 +22,7 @@
   },
   "permissions": [
     "http://*.soundcloud.com/*",
+    "https://*.soundcloud.com/*",
     "background"
   ],
   "web_accessible_resources": [

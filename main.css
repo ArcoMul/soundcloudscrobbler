@@ -119,3 +119,16 @@
 	font-size:10px !important;
 	font-weight:normal !important;
 }
+
+/* NEW */
+#soundcloudscrobbler-scrobble-label {
+    position: fixed;
+    right: 5px;
+    top: 50px;
+    background-color: #FFF;
+    padding: 10px;
+    border: 1px solid #CCC;
+}
+#soundcloudscrobbler-scrobble-label strong {
+    font-weight: bold;
+}
