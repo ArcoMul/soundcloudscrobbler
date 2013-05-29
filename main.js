@@ -278,8 +278,25 @@ var Track = function(key)
 var SrobbleLabel = function () {
     this.$el;
     this.init = function () {
-        $('body').append('<div id="soundcloudscrobbler-scrobble-label"><strong>Now Srobbling:</strong><br /><span class="now"><em>Nothing yet</em></span></div>');
-        this.$el = $('#soundcloudscrobbler-scrobble-label');
+        $('body').append("<div id='soundcloudscrobbler'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div><div class='info'>Hi, hover me!<br />I finally renewed the Soundcloud Scrobbler! Does it work? And do you like it? Please update <a href='https://chrome.google.com/webstore/detail/soundcloud-scrobbler/kpeffoigdfgjdbbijlaaodoicejjbpcg/reviews'>your review</a> to help other users. (It receive quite some negative feedback in the time it didn't support the new Soundcloud Next</div></div>");
+        var infoHeight = $("#soundcloudscrobbler .info").height();
+        $("#soundcloudscrobbler .info").height(9);
+        this.$el = $('#soundcloudscrobbler .scrobble-label');
+        $("#soundcloudscrobbler .info").mouseenter(function(){
+            $(this).animate({
+                height: infoHeight 
+            }).css({
+                cursor: "default",
+                color: "#000"
+            });
+        }).mouseleave(function(){
+            $(this).animate({
+                height: 9 
+            }).css({
+                cursor: "pointer",
+                color: "#8B8B8B"
+            });
+        });
     }
     this.showTrack = function (track) {
        this.$el.children('span.now').html(track.artist + ' - ' + track.title); 
@@ -327,7 +344,7 @@ function init () {
         var title = document.getElementsByTagName('title')[0].innerHTML;
         if(!title) return;
         if(tracks[title]) {
-            if(tracks[title] !== nowPlaying) {
+            if(tracks[title] !== nowPlaying && !tracks[title].noTrack) {
                 switchTo(tracks[title]);
             } else {
                 return;
@@ -352,6 +369,7 @@ function initTrack(track)
     console.log('Title', title, 'Username', username);
 
     if(!username) {
+        track.noTrack = true;
         console.log('Not a track');
         return;
     }
