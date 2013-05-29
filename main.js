@@ -6,11 +6,7 @@
  *  Dunno, just don't steal my shit and prentend it is your shit. When you
  *  make it better and give credits to me, you are free to use it.
  *
- * Todo's, before releasing
- *  - If not track, show a nice notification instead of 'Undefined - Undefined'
- *  - Test
- *
- *  Todo's, further away
+ *  Todo's, once 
  *  - Track with multiple tracks (doesn't use 'by')
  *
  * Changelog
@@ -152,16 +148,21 @@ var Track = function(key)
 	this.init = function()
 	{
         console.log('New track found:', this.key);
-		// this.duration = this.getDuration();
 	}
 	
 	
 	this.getDuration = function ()
 	{
-        // TODO
-		var time = this.playerElm.find(".timecodes .duration").html();
-		time = time.split(".");
-		return (Number(time[0]) * 60 + Number(time[1]));
+        var time;
+
+        if(this.playing) {
+            time = $('.playing .timeIndicator.playing .timeIndicator__current:visible').next().html();
+            time = time.split(".");
+            return (Number(time[0]) * 60 + Number(time[1]));
+        } else {
+            console.log('Cant get duration, track not playing');
+            return -1;
+        }
 	}
 	
 	/**
@@ -194,7 +195,16 @@ var Track = function(key)
 	
 	this.getSecondsPlayed = function ()
 	{
-		return Number($('.playing .timeIndicator.playing .timeIndicator__current:visible').html());
+        var time;
+
+        if(this.playing) {
+            time = $('.playing .timeIndicator.playing .timeIndicator__current:visible').html();
+            time = time.split(".");
+            return (Number(time[0]) * 60 + Number(time[1]));
+        } else {
+            console.log('Cant get seconds played, track not playing');
+            return -1;
+        }
 	}
 	
 	this.updateSecondsPlayed = function ()
@@ -213,6 +223,7 @@ var Track = function(key)
 			if(this.startTime == undefined)
 				this.startTime = Math.round((new Date()).getTime() / 1000);
 			this.playing = true;
+            this.duration = this.getDuration();
 			lastfm.setPlaying(this);
 		}
 		else if (this.playing)
@@ -278,7 +289,7 @@ var Track = function(key)
 var SrobbleLabel = function () {
     this.$el;
     this.init = function () {
-        $('body').append("<div id='soundcloudscrobbler'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div><div class='info'>Hi, hover me!<br />I finally renewed the Soundcloud Scrobbler! Does it work? And do you like it? Please update <a href='https://chrome.google.com/webstore/detail/soundcloud-scrobbler/kpeffoigdfgjdbbijlaaodoicejjbpcg/reviews'>your review</a> to help other users. (It receive quite some negative feedback in the time it didn't support the new Soundcloud Next</div></div>");
+        $('body').append("<div id='soundcloudscrobbler'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div><div class='info'>Hi, hover me!<br />I finally renewed the Soundcloud Scrobbler! Does it work? And do you like it? Please update <a href='https://chrome.google.com/webstore/detail/soundcloud-scrobbler/kpeffoigdfgjdbbijlaaodoicejjbpcg/reviews'>your review</a> to help other users. (It received quite some negative feedback in the time it didn't support the new Soundcloud Next ;-)</div></div>");
         var infoHeight = $("#soundcloudscrobbler .info").height();
         $("#soundcloudscrobbler .info").height(9);
         this.$el = $('#soundcloudscrobbler .scrobble-label');
@@ -370,6 +381,7 @@ function initTrack(track)
 
     if(!username) {
         track.noTrack = true;
+        label.showUnknown();
         console.log('Not a track');
         return;
     }
