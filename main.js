@@ -315,6 +315,9 @@ var SrobbleLabel = function () {
     this.showUnknown = function (track) {
        this.$el.children('span.now').html('<em>Unkown track</em>'); 
     }
+    this.reset = function (track) {
+       this.$el.children('span.now').html('<em>Nothing yet</em>'); 
+    }
     this.init();
 }
 
@@ -361,6 +364,9 @@ function init () {
                 return;
             }
         } else { 
+            if(title.substr(0, 11) === "Your stream") {
+                return label.reset();
+            }
             tracks[title] = new Track(title);   
             initTrack(tracks[title]);
         }
