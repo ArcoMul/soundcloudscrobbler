@@ -4,12 +4,14 @@
     right: 5px;
     top: 53px;
     padding: 10px;
-    border: 1px solid #DFDFDF;
-    background-color: #FAFAFA;
     border-radius: 3px;
-    border-bottom: 1px solid #CCC;
+    z-index: 999;
+}
+#soundcloudscrobbler .scrobble-label {
     box-shadow: 0 1px 1px 0px rgba(0, 0, 0, 0.1);
-    z-index:2;
+    background-color: #FAFAFA;
+    border: 1px solid #DFDFDF;
+    border-bottom: 1px solid #CCC;
 }
 #soundcloudscrobbler .scrobble-label strong {
     font-weight: bold;
@@ -19,9 +21,23 @@
     overflow: hidden;
     right: 11px;
     width: 88px;
-    padding-top: 15px;
+    padding-top: 20px;
     z-index:1;
     top: 92px;
-    cursor: pointer;
-    color: #8B8B8B;
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #FFF;
 } 
+
+#soundcloudscrobbler .info-icon {
+    width: 14px;
+    height: 14px;
+    background-image:url('chrome-extension://__MSG_@@extension_id__/info-icon.png');
+    display: inline-block;
+    background-position: top;
+    margin-bottom: -3px;
+    margin-left: 2px;
+    cursor: pointer;
+}
+#soundcloudscrobbler .info-icon:hover {
+    background-position: bottom;
+}

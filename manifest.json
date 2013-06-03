@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "minimum_chrome_version": "18",
   "name": "Soundcloud Scrobbler",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Last.fm scrobbling tracks of Soundcloud.com",
   "icons": {"128": "icon128.png"},
   "content_scripts": [
@@ -28,6 +28,7 @@
   "web_accessible_resources": [
   	"LastFMfavicon.png",
   	"sprite.png",
+  	"info-icon.png",
   	"jquery.js",
   	"options.js",
   	"encode.js",

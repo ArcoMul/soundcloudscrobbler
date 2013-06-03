@@ -6,11 +6,13 @@
  *  Dunno, just don't steal my shit and prentend it is your shit. When you
  *  make it better and give credits to me, you are free to use it.
  *
- *  Todo's, once 
- *  - Track with multiple tracks (doesn't use 'by')
- *
  * Changelog
- *  2.0.1 - 27 mei 2013
+ *  2.0.2 - 3 june 2013
+ *   - Track and artist are a link to their LastFM page
+ *   - Show info icon which displays some information when a track can't be scrobbled
+ *   - Bug: no crash when the current playing track is not on the page (might still 
+ *     crash because it can't get the duration and seconds played)
+ *  2.0.1 - 27 may 2013
  *   - First working version for SoundcloudNext
  *  1.0.2 - 2 august 2012
  *   - Bug: And again Chrome seemed to have a problem with me (Manifest version 2)
@@ -157,6 +159,10 @@ var Track = function(key)
 
         if(this.playing) {
             time = $('.playing .timeIndicator.playing .timeIndicator__current:visible').next().html();
+            if(!time) {
+                console.log('Cant get duration, player not on page (no time indicator)');
+                return -1;
+            }
             time = time.split(".");
             return (Number(time[0]) * 60 + Number(time[1]));
         } else {
@@ -199,6 +205,10 @@ var Track = function(key)
 
         if(this.playing) {
             time = $('.playing .timeIndicator.playing .timeIndicator__current:visible').html();
+            if(!time) {
+                console.log('Cant get seconds played, player not on page (no time indicator)');
+                return -1;
+            }
             time = time.split(".");
             return (Number(time[0]) * 60 + Number(time[1]));
         } else {
@@ -282,6 +292,14 @@ var Track = function(key)
 		var label = this.getLabel();
 		label.next().hide().next().hide();
 	}
+
+    this.getArtistUrl = function () {
+        return 'http://www.last.fm/music/' + this.artist;
+    }
+
+    this.getTrackUrl = function () {
+        return 'http://www.last.fm/music/' + this.artist + '/_/' + this.title; 
+    }
 	
 	this.init();
 }
@@ -289,11 +307,26 @@ var Track = function(key)
 var SrobbleLabel = function () {
     this.$el;
     this.init = function () {
-        $('body').append("<div id='soundcloudscrobbler'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div><div class='info'>Hi, hover me!<br />I finally renewed the Soundcloud Scrobbler! Does it work? And do you like it? Please update <a href='https://chrome.google.com/webstore/detail/soundcloud-scrobbler/kpeffoigdfgjdbbijlaaodoicejjbpcg/reviews'>your review</a> to help other users. (It received quite some negative feedback in the time it didn't support the new Soundcloud Next ;-)</div></div>");
-        var infoHeight = $("#soundcloudscrobbler .info").height();
-        $("#soundcloudscrobbler .info").height(9);
+        var self = this,
+            $info,
+            infoHeight;
+
+        $('body').append("<div id='soundcloudscrobbler'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div></div>");
         this.$el = $('#soundcloudscrobbler .scrobble-label');
-        $("#soundcloudscrobbler .info").mouseenter(function(){
+        this.$el.on('mouseenter mouseleave', 'span.now .info-icon', function (e) {
+            if(e.type == 'mouseenter') {
+                self.showInfoText($(this).data('info'));
+            } else {
+                self.hideInfoText();
+            }
+        });
+
+        $info = $("#soundcloudscrobbler .info");
+        if(!$info) return;
+
+        infoHeight = $info.height();
+        $info.height(9);
+        $info.mouseenter(function(){
             $(this).animate({
                 height: infoHeight 
             }).css({
@@ -310,13 +343,24 @@ var SrobbleLabel = function () {
         });
     }
     this.showTrack = function (track) {
-       this.$el.children('span.now').html(track.artist + ' - ' + track.title); 
+       this.$el.children('span.now').html('<a target="_blank" href="' + track.getArtistUrl() + '">' + track.artist + '</a> - <a target="_blank" href="' + track.getTrackUrl() + '">' + track.title + '</a>'); 
     }
     this.showUnknown = function (track) {
-       this.$el.children('span.now').html('<em>Unkown track</em>'); 
+       this.$el.children('span.now').html("<em>Unkown track <span class=\"info-icon\" data-info=\"The track you are playing right know is not yet added to LastFM. In the near future you'll be possible to add it to LastFM yourself.\"></span></em>"); 
     }
     this.reset = function (track) {
-       this.$el.children('span.now').html('<em>Nothing yet</em>'); 
+       this.$el.children('span.now').html('<em>Nothing yet <span class="info-icon" data-info="I just tried to determine whether you are playing a track right now, seems not te be so?"></span></em>'); 
+    }
+
+    this.showInfoText = function (message) {
+        if(this.$el.next().hasClass('info')) {
+            this.hideInfoText();
+        }
+        this.$el.after('<div class="info">' + message + '</div>');
+        this.$el.next().width(this.$el.width() - 10);
+    }
+    this.hideInfoText = function () {
+        this.$el.next().remove();
     }
     this.init();
 }
@@ -333,7 +377,7 @@ var apikey = "fa4fd9860f4323abe636e5d8f22c85c1";
 var secret = "c8d4daf706b407a22e1d0a22534bcd02";
 var user = {};
 var lastfm = new LastFM();
-var label = new SrobbleLabel();
+var UILabel = new SrobbleLabel();
 var nowPlaying;
 
 var playermode = {
@@ -365,7 +409,7 @@ function init () {
             }
         } else { 
             if(title.substr(0, 11) === "Your stream") {
-                return label.reset();
+                return UILabel.reset();
             }
             tracks[title] = new Track(title);   
             initTrack(tracks[title]);
@@ -387,7 +431,7 @@ function initTrack(track)
 
     if(!username) {
         track.noTrack = true;
-        label.showUnknown();
+        UILabel.showUnknown();
         console.log('Not a track');
         return;
     }
@@ -501,7 +545,7 @@ function addArtistAndTrackToTrack(track, artists, titles, callback)
 var switchTo = function (track) {
     if(track.unknown) {
         console.log('Unkown track'); 
-        label.showUnknown();
+        UILabel.showUnknown();
         nowPlaying = null;
     }
     else {
@@ -510,7 +554,7 @@ var switchTo = function (track) {
         }
         nowPlaying = track;
         nowPlaying.play();
-        label.showTrack(nowPlaying);
+        UILabel.showTrack(nowPlaying);
     }
 }
 
