@@ -158,12 +158,14 @@ var Track = function(key)
         var time;
 
         if(this.playing) {
-            time = $('.playing .timeIndicator.playing .timeIndicator__current:visible').next().html();
+            time = $('.playing .timeIndicator.playing .timeIndicator__current:visible').next().children().last().html();
+            console.log('Time:', time);
             if(!time) {
                 console.log('Cant get duration, player not on page (no time indicator)');
                 return -1;
             }
             time = time.split(".");
+            console.log('Time:', time);
             return (Number(time[0]) * 60 + Number(time[1]));
         } else {
             console.log('Cant get duration, track not playing');
@@ -258,41 +260,24 @@ var Track = function(key)
 	 * Show all possible artist and title combination when those are not yet on LastFM
 	 * (when the track is unkown)
 	 */
-	this.showPossibilities = function()
+	this.getPossibilities = function()
 	{
-		var label = this.getLabel();
-		if(label.next('.arrow').length == 0)
-		{
-			label.after('<div class="arrow" style="background-image:url('+chrome.extension.getURL("sprite.png")+')"></div><div class="cloud"><table cellspacing="0" cellpadding="0"><tr><th>Artist</th><th>Title</th><th><div class="close-cloud" style="background-image:url('+chrome.extension.getURL("sprite.png")+')"></div></th></tr></table></div>');
-			var cloud = label.next().next().children('table');
-			var posb = [];
-			for(var i = 0; i < this.artists.length; i++)
-			{
-				for(var j = 0; j < this.titles.length; j++)
-				{
-					if(this.checkArtistAndTitle(this.artists[i], this.titles[j]))
-						posb.push({artist: this.artists[i], title: this.titles[j]});
-				}
-			}
-			for(i = 0; i < posb.length; i++){
-				cloud.append('<tr><td>'+posb[i].artist+'</td><td>'+posb[i].title+'</td><td><a href="#" class="select">select</a></td></tr>');
-			}
-		}
-		else
-		{
-			label.next().show().next().show();
-		}
+        var $html = $('<table cellspacing="0" cellpadding="0"><tr><th>Artist</th><th>Title</th><th><a href="#" class="close">close</a></th></tr></table>');
+        var posb = [];
+        for(var i = 0; i < this.artists.length; i++)
+        {
+            for(var j = 0; j < this.titles.length; j++)
+            {
+                if(this.checkArtistAndTitle(this.artists[i], this.titles[j]))
+                    posb.push({artist: this.artists[i], title: this.titles[j]});
+            }
+        }
+        for(i = 0; i < posb.length; i++){
+            $html.append('<tr><td>'+posb[i].artist+'</td><td>'+posb[i].title+'</td><td><a href="#" class="select">select</a></td></tr>');
+        }
+        return $html;
 	}
 	
-	/**
-	 * Hide the possibilities cloud
-	 */
-	this.hidePossibilities = function()
-	{
-		var label = this.getLabel();
-		label.next().hide().next().hide();
-	}
-
     this.getArtistUrl = function () {
         return 'http://www.last.fm/music/' + this.artist;
     }
@@ -311,13 +296,40 @@ var SrobbleLabel = function () {
             $info,
             infoHeight;
 
-        $('body').append("<div id='soundcloudscrobbler'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div></div>");
+        $('body').append("<div id='soundcloudscrobbler'><div class='top-right'><div class='scrobble-label'><strong>Now Srobbling:</strong><br /><span class='now'><em>Nothing yet</em></span></div></div></div>");
         this.$el = $('#soundcloudscrobbler .scrobble-label');
         this.$el.on('mouseenter mouseleave', 'span.now .info-icon', function (e) {
             if(e.type == 'mouseenter') {
                 self.showInfoText($(this).data('info'));
             } else {
                 self.hideInfoText();
+            }
+        });
+
+        this.$el.on('click', 'a.add-track', function (e) {
+            e.preventDefault();
+            self.showAddTrackSubLabel();
+        });
+
+        this.$el.parent().on('click', 'a.select', function (e) {
+            e.preventDefault();
+            nowPlaying.title = $(this).parent().prev().text();
+            nowPlaying.artist = $(this).parent().prev().prev().text();
+            nowPlaying.setKnown();
+            switchTo(nowPlaying, true);
+            self.hideAddTrackSubLabel();
+        });
+
+        this.$el.parent().on('click', 'a.close', function (e) {
+            e.preventDefault();
+            self.hideAddTrackSubLabel();
+        });
+
+        this.$el.parent().on('mouseenter mouseleave', 'table tr td', function(e){
+            if(e.type == 'mouseenter') {
+                $(this).parent().children().css('background-color', '#ddd');
+            } else {
+                $(this).parent().children().css('background-color', '');
             }
         });
 
@@ -346,22 +358,33 @@ var SrobbleLabel = function () {
        this.$el.children('span.now').html('<a target="_blank" href="' + track.getArtistUrl() + '">' + track.artist + '</a> - <a target="_blank" href="' + track.getTrackUrl() + '">' + track.title + '</a>'); 
     }
     this.showUnknown = function (track) {
-       this.$el.children('span.now').html("<em>Unkown track <span class=\"info-icon\" data-info=\"The track you are playing right know is not yet added to LastFM. In the near future you'll be possible to add it to LastFM yourself.\"></span></em>"); 
+       this.$el.children('span.now').html("<em>Unkown track <span class=\"info-icon\" data-info=\"The track you are playing right know is not yet added to LastFM. In the near future you'll be possible to add it to LastFM yourself.\"></span></em><br /><a href='#' class='add-track'>Add this track</a>"); 
     }
     this.reset = function (track) {
        this.$el.children('span.now').html('<em>Nothing yet <span class="info-icon" data-info="I just tried to determine whether you are playing a track right now, seems not te be so?"></span></em>'); 
     }
 
     this.showInfoText = function (message) {
-        if(this.$el.next().hasClass('info')) {
+        if(this.$el.parent().children('.info').length > 0) {
             this.hideInfoText();
         }
         this.$el.after('<div class="info">' + message + '</div>');
         this.$el.next().width(this.$el.width() - 10);
     }
     this.hideInfoText = function () {
-        this.$el.next().remove();
+        this.$el.parent().children('.info').remove();
     }
+
+    this.showAddTrackSubLabel = function () {
+        if(this.$el.parent().children('.sub-label').length > 0) {
+            this.hideAddTrackSubLabel();
+        }
+        this.$el.after('<div class="scrobble-label sub-label">' + $('<div />').append(nowPlaying.getPossibilities()).html() + '</div>');
+    }
+    this.hideAddTrackSubLabel = function () {
+        this.$el.parent().children('.sub-label').remove();
+    }
+
     this.init();
 }
 
@@ -394,7 +417,7 @@ function init () {
 
     setInterval(function(){
         // 'play' to update the seconds counter
-        if(nowPlaying) {
+        if(nowPlaying && !nowPlaying.unkown) {
             nowPlaying.play();
         }
         
@@ -543,10 +566,11 @@ function addArtistAndTrackToTrack(track, artists, titles, callback)
 }
 
 var switchTo = function (track) {
+    UILabel.hideAddTrackSubLabel();
     if(track.unknown) {
         console.log('Unkown track'); 
         UILabel.showUnknown();
-        nowPlaying = null;
+        nowPlaying = track;
     }
     else {
         if(nowPlaying) {
@@ -570,41 +594,3 @@ function loadUser(callback)
         callback();
     });
 }
-
-// Events:
-
-//When the user click on the load more button (re-initialize everything)
-$("#dashboard .show-more").live('click', function(){
-	restart();
-});
-
-// When the user clicks on the label to show possible combinations
-$(".SLSholder .add").live("click", function(e){
-	e.preventDefault();
-	var track = tracks[$(this).parents(".player").data("SLSid")];
-	console.log('click', track);
-	track.showPossibilities();
-});
-
-// Give the table of the possibilities cloud a darker color by hovering
-$(".SLSholder .cloud table tr td").live("mouseenter", function(){
-	$(this).parent().children().css('background-color', '#ddd');
-}).live('mouseleave', function(){
-	$(this).parent().children().css('background-color', '');
-});
-
-// The button to select a combination from the possibilities
-$(".SLSholder .select").live("click", function(e){
-	e.preventDefault();
-	var track = tracks[$(this).parents(".player").data("SLSid")];
-	track.title = $(this).parent().prev().text();
-	track.artist = $(this).parent().prev().prev().text();
-	track.setKnown();
-});
-
-// Close the possibilities cloud
-$(".SLSholder .close-cloud").live("click", function(e){
-	e.preventDefault();
-	var track = tracks[$(this).parents(".player").data("SLSid")];
-	track.hidePossibilities();
-});

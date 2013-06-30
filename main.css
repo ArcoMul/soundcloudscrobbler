@@ -1,31 +1,39 @@
-#soundcloudscrobbler .scrobble-label,
-#soundcloudscrobbler .info {
+#soundcloudscrobbler .top-right {
     position: fixed;
     right: 5px;
     top: 53px;
+    z-index: 999;
+}
+#soundcloudscrobbler .scrobble-label,
+#soundcloudscrobbler .info {
     padding: 10px;
     border-radius: 3px;
-    z-index: 999;
 }
 #soundcloudscrobbler .scrobble-label {
     box-shadow: 0 1px 1px 0px rgba(0, 0, 0, 0.1);
     background-color: #FAFAFA;
     border: 1px solid #DFDFDF;
     border-bottom: 1px solid #CCC;
+    z-index: 1;
 }
 #soundcloudscrobbler .scrobble-label strong {
     font-weight: bold;
+}
+
+#soundcloudscrobbler .scrobble-label.sub-label  {
+    margin-top: 5px;
 }
 
 #soundcloudscrobbler .info {
     overflow: hidden;
     right: 11px;
     width: 88px;
-    padding-top: 20px;
-    z-index:1;
+    z-index: 2;
     top: 92px;
     background-color: rgba(0, 0, 0, 0.75);
     color: #FFF;
+    border-radius: 0 0 3px 3px;
+    margin-left: 5px;
 } 
 
 #soundcloudscrobbler .info-icon {
@@ -40,4 +48,18 @@
 }
 #soundcloudscrobbler .info-icon:hover {
     background-position: bottom;
+}
+
+#soundcloudscrobbler table td, #soundcloudscrobbler table th {
+	line-height:14px;
+	background-color:#e5e5e5;
+	padding:3px 5px;
+	text-align:left;
+	cursor:default;
+}
+#soundcloudscrobbler table tr:nth-child(even) td, #soundcloudscrobbler table tr:nth-child(even) th {
+	background-color:#eee;
+}
+#soundcloudscrobbler table th {
+	font-weight:bold;
 }
