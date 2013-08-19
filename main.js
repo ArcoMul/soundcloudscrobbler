@@ -7,6 +7,9 @@
  *  make it better and give credits to me, you are free to use it.
  *
  * Changelog
+ *  2.0.3 - 20 august 2013
+ *   - Fixed a small bug where the wrong info was shown
+ *   - Put in an email adres for bug reporting
  *  2.0.2 - 3 june 2013
  *   - Track and artist are a link to their LastFM page
  *   - Show info icon which displays some information when a track can't be scrobbled
@@ -55,6 +58,10 @@
  *  - You can only scrobble tracks in a 'full player'. Tracks which are part of sets
  *    don't work (yet).
  */
+
+if (typeof SoundCloudScrobblerStarted === 'undefined') {
+    SoundCloudScrobblerStarted = false;
+}
 
 var LastFM = function()
 {
@@ -358,7 +365,22 @@ var SrobbleLabel = function () {
        this.$el.children('span.now').html('<a target="_blank" href="' + track.getArtistUrl() + '">' + track.artist + '</a> - <a target="_blank" href="' + track.getTrackUrl() + '">' + track.title + '</a>'); 
     }
     this.showUnknown = function (track) {
-       this.$el.children('span.now').html("<em>Unkown track <span class=\"info-icon\" data-info=\"The track you are playing right know is not yet added to LastFM. In the near future you'll be possible to add it to LastFM yourself.\"></span></em><br /><a href='#' class='add-track'>Add this track</a>"); 
+        var html;
+        if (!track || track.noTrack) {
+            html = "<em>No track found <span class=\"info-icon\" data-info=\"" +
+                "Sorry, but I wasn't able to identify this as a track." +
+                "If you are playing a track though, drop an email at: " +
+                "soundcloud<br />scrobbler<br />@arcomul.nl with a link to the track you " +
+                "were playing. WARNING: 'sets' are not yet working. I might support them in the future." +
+                "\"></span></em>";
+        } else {
+            html = "<em>Unkown track <span class=\"info-icon\" data-info=\"" +
+                "The track you are playing right know is not yet added to LastFM." +
+                "Use the link below to add this track to LastFM." +
+                "\"></span></em>" +
+                "<br /><a href='#' class='add-track'>Add this track</a>";
+        }
+        this.$el.children('span.now').html(html); 
     }
     this.reset = function (track) {
        this.$el.children('span.now').html('<em>Nothing yet <span class="info-icon" data-info="I just tried to determine whether you are playing a track right now, seems not te be so?"></span></em>'); 
@@ -413,7 +435,12 @@ loadUser(init);
 // setInterval(playing, 1000);
 
 function init () {
-    console.log('Start Soundcloud Scrobbler');
+    if (!SoundCloudScrobblerStarted) {
+        console.log('Start Soundcloud Scrobbler' + SoundCloudScrobblerStarted);
+        SoundCloudScrobblerStarted = true;
+    } else {
+        return console.log('Soundcloud Scrobbler already started, ignore');
+    }
 
     setInterval(function(){
         // 'play' to update the seconds counter
