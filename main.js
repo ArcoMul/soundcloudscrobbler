@@ -7,6 +7,10 @@
  *  make it better and give credits to me, you are free to use it.
  *
  * Changelog
+ *  2.0.5 - 11 November 2013
+ *   - Disabled the functionality and shows information about why it doesn't work anymore 
+ *  2.0.4 - 23 august 2013
+ *   - Add-track label didn't show up when the track was actually recognized as a track 
  *  2.0.3 - 20 august 2013
  *   - Fixed a small bug where the wrong info was shown
  *   - Put in an email adres for bug reporting
@@ -150,6 +154,7 @@ var Track = function(key)
 	// this.mode = mode || null;
 	this.artists = [];
 	this.titles = [];
+    this.noTrack = false;
 	
 	/**
 	 * Start function of the object
@@ -361,12 +366,17 @@ var SrobbleLabel = function () {
             });
         });
     }
+    this.remove = function () {
+        $("#soundcloudscrobbler").remove();
+    }
     this.showTrack = function (track) {
        this.$el.children('span.now').html('<a target="_blank" href="' + track.getArtistUrl() + '">' + track.artist + '</a> - <a target="_blank" href="' + track.getTrackUrl() + '">' + track.title + '</a>'); 
     }
     this.showUnknown = function (track) {
+        this.hideAddTrackSubLabel();
+        this.hideInfoText();
         var html;
-        if (!track || track.noTrack) {
+        if (!track || track.noTrack === true) {
             html = "<em>No track found <span class=\"info-icon\" data-info=\"" +
                 "Sorry, but I wasn't able to identify this as a track." +
                 "If you are playing a track though, drop an email at: " +
@@ -387,24 +397,26 @@ var SrobbleLabel = function () {
     }
 
     this.showInfoText = function (message) {
-        if(this.$el.parent().children('.info').length > 0) {
-            this.hideInfoText();
-        }
+        this.hideAddTrackSubLabel();
+        this.hideInfoText();
         this.$el.after('<div class="info">' + message + '</div>');
         this.$el.next().width(this.$el.width() - 10);
     }
     this.hideInfoText = function () {
-        this.$el.parent().children('.info').remove();
+        if(this.$el.parent().children('.info').length > 0) {
+            this.$el.parent().children('.info').remove();
+        } 
     }
 
     this.showAddTrackSubLabel = function () {
-        if(this.$el.parent().children('.sub-label').length > 0) {
-            this.hideAddTrackSubLabel();
-        }
+        this.hideAddTrackSubLabel();
+        this.hideInfoText();
         this.$el.after('<div class="scrobble-label sub-label">' + $('<div />').append(nowPlaying.getPossibilities()).html() + '</div>');
     }
     this.hideAddTrackSubLabel = function () {
-        this.$el.parent().children('.sub-label').remove();
+        if(this.$el.parent().children('.sub-label').length > 0) {
+            this.$el.parent().children('.sub-label').remove();
+        }
     }
 
     this.init();
@@ -435,12 +447,21 @@ loadUser(init);
 // setInterval(playing, 1000);
 
 function init () {
+
     if (!SoundCloudScrobblerStarted) {
         console.log('Start Soundcloud Scrobbler' + SoundCloudScrobblerStarted);
         SoundCloudScrobblerStarted = true;
     } else {
         return console.log('Soundcloud Scrobbler already started, ignore');
     }
+    
+    UILabel.showInfoText ("Sorry, because of changes in Soundcloud the scrobbler doesn't work at the moment. <a href='http://arcomul.nl/blog/2013-11-11/soundcloudscrobbler-not-working' target='_blank'>Click here to read more</a>.");
+
+    setTimeout (function () {
+        UILabel.remove();   
+    }, 5000);
+
+    return;
 
     setInterval(function(){
         // 'play' to update the seconds counter
@@ -481,7 +502,7 @@ function initTrack(track)
 
     if(!username) {
         track.noTrack = true;
-        UILabel.showUnknown();
+        UILabel.showUnknown(track);
         console.log('Not a track');
         return;
     }
@@ -505,7 +526,7 @@ function initTrack(track)
 	
 	// Adding the artist and title to the track
 	addArtistAndTrackToTrack(tracks[track.key], artists, titles, function(track, title, artist) {
-        console.log('Track initialized'); 
+        console.log('Track initialized', track, title, artist); 
         switchTo(track);
     });
 };
@@ -596,7 +617,7 @@ var switchTo = function (track) {
     UILabel.hideAddTrackSubLabel();
     if(track.unknown) {
         console.log('Unkown track'); 
-        UILabel.showUnknown();
+        UILabel.showUnknown(track);
         nowPlaying = track;
     }
     else {
